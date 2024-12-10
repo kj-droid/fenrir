@@ -1,6 +1,6 @@
-# Fenrir: Advanced Multi-Module Security Scanner
+# Fenrir: Basic Multi-Module Security Scanner
 
-**Fenrir** is a comprehensive security scanning tool designed for penetration testing, vulnerability identification, and threat intelligence gathering. Built with modularity and scalability in mind, Fenrir integrates multiple scanning modules, machine learning capabilities, and detailed reporting for enhanced security analysis.
+**Fenrir** is a basic security scanning tool designed for penetration testing, vulnerability identification, and threat intelligence gathering. Built with modularity and scalability in mind, Fenrir attempts integration of multiple scanning modules, machine learning capabilities, and detailed reporting for enhanced security analysis.
 
 ---
 
