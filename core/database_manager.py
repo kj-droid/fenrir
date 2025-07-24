@@ -1,160 +1,141 @@
+import sqlite3
+import requests
 import json
+import zipfile
+import io
 import os
 import logging
-
+from datetime import datetime
 
 class DatabaseManager:
-    def __init__(self, db_path="data/nvd_local_db.json"):
+    def __init__(self, db_path="data/cve.db"):
         """
-        Initialize the DatabaseManager.
-        :param db_path: Path to the local database JSON file.
+        Manages the local CVE database using SQLite.
         """
         self.db_path = db_path
         self.logger = logging.getLogger("DatabaseManager")
-        logging.basicConfig(level=logging.INFO)
+        
+        # Ensure the data directory exists
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        
+        self.conn = sqlite3.connect(self.db_path)
+        self._create_table()
 
-        # Ensure the database file exists
-        if not os.path.exists(db_path):
-            self.logger.info("Database file not found. Initializing a new database.")
-            self._initialize_database()
-
-    def _initialize_database(self):
+    def _create_table(self):
         """
-        Initialize an empty database.
+        Creates the 'vulnerabilities' table if it doesn't exist.
         """
-        try:
-            with open(self.db_path, "w") as file:
-                json.dump({"CVE_Items": []}, file, indent=4)
-            self.logger.info("New database initialized.")
-        except Exception as e:
-            self.logger.error(f"Failed to initialize database: {e}")
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vulnerabilities (
+                cve_id TEXT PRIMARY KEY,
+                description TEXT,
+                cvss_v3_score REAL,
+                severity TEXT,
+                published_date TEXT
+            )
+        ''')
+        self.conn.commit()
 
-    def add_vulnerabilities(self, vulnerabilities):
+    def update_database(self):
         """
-        Add new vulnerabilities to the database.
-        :param vulnerabilities: List of vulnerabilities to add.
+        Downloads the latest NVD data feeds and updates the database.
+        Fetches data for the current year and the 4 previous years.
         """
-        try:
-            with open(self.db_path, "r") as file:
-                db_data = json.load(file)
+        self.logger.info("Starting CVE database update...")
+        current_year = datetime.now().year
+        # Fetch data for the last 5 years (including current)
+        for year in range(current_year - 4, current_year + 1):
+            feed_url = f"https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-{year}.json.zip"
+            self.logger.info(f"Fetching data from {feed_url}")
+            
+            try:
+                response = requests.get(feed_url, timeout=30)
+                response.raise_for_status() # Raise an exception for bad status codes
 
-            db_data["CVE_Items"].extend(vulnerabilities)
+                # Unzip and parse the file in memory
+                with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+                    json_filename = z.namelist()[0]
+                    with z.open(json_filename) as json_file:
+                        cve_data = json.load(json_file)
+                        self._parse_and_insert(cve_data)
 
-            with open(self.db_path, "w") as file:
-                json.dump(db_data, file, indent=4)
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f"Failed to download data for year {year}: {e}")
+            except Exception as e:
+                self.logger.error(f"An error occurred while processing data for year {year}: {e}")
+        
+        self.logger.info("CVE database update complete.")
 
-            self.logger.info(f"Added {len(vulnerabilities)} vulnerabilities to the database.")
-        except Exception as e:
-            self.logger.error(f"Error adding vulnerabilities: {e}")
-
-    def query_vulnerabilities(self, software_name, severity_threshold="LOW"):
+    def _parse_and_insert(self, cve_data):
         """
-        Query vulnerabilities for a specific software.
-        :param software_name: Software name to search for vulnerabilities.
-        :param severity_threshold: Minimum severity level (LOW, MEDIUM, HIGH, CRITICAL).
-        :return: List of matching vulnerabilities.
+        Parses the JSON data from a feed and inserts it into the database.
         """
-        severity_levels = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
+        cursor = self.conn.cursor()
+        vulnerabilities_to_insert = []
+        
+        for item in cve_data.get("CVE_Items", []):
+            cve_id = item["cve"]["CVE_data_meta"]["ID"]
+            description = item["cve"]["description"]["description_data"][0]["value"]
+            published_date = item["publishedDate"]
+            
+            cvss_v3_score = None
+            severity = "UNKNOWN"
+            
+            # Prefer CVSS v3 metrics if available
+            if "baseMetricV3" in item["impact"]:
+                cvss_v3 = item["impact"]["baseMetricV3"]["cvssV3"]
+                cvss_v3_score = cvss_v3["baseScore"]
+                severity = cvss_v3["baseSeverity"]
+            elif "baseMetricV2" in item["impact"]: # Fallback to v2
+                cvss_v2 = item["impact"]["baseMetricV2"]
+                severity = cvss_v2["severity"]
 
-        try:
-            with open(self.db_path, "r") as file:
-                db_data = json.load(file)
+            vulnerabilities_to_insert.append(
+                (cve_id, description, cvss_v3_score, severity, published_date)
+            )
+        
+        # Use executemany for efficient bulk insertion
+        cursor.executemany('''
+            INSERT OR REPLACE INTO vulnerabilities (cve_id, description, cvss_v3_score, severity, published_date)
+            VALUES (?, ?, ?, ?, ?)
+        ''', vulnerabilities_to_insert)
+        
+        self.conn.commit()
+        self.logger.info(f"Inserted/Updated {len(vulnerabilities_to_insert)} records.")
 
-            matches = []
-            for cve in db_data.get("CVE_Items", []):
-                description = cve.get("cve", {}).get("description", {}).get("description_data", [{}])[0].get("value", "")
-                severity = cve.get("impact", {}).get("baseMetricV3", {}).get("cvssV3", {}).get("baseSeverity", "LOW")
-                severity_rank = severity_levels.get(severity.upper(), 0)
-
-                if software_name.lower() in description.lower() and severity_rank >= severity_levels.get(severity_threshold.upper(), 0):
-                    matches.append({
-                        "id": cve.get("cve", {}).get("CVE_data_meta", {}).get("ID", ""),
-                        "description": description,
-                        "severity": severity,
-                        "references": [ref.get("url", "") for ref in cve.get("cve", {}).get("references", {}).get("reference_data", [])]
-                    })
-
-            self.logger.info(f"Found {len(matches)} vulnerabilities matching query.")
-            return matches
-        except Exception as e:
-            self.logger.error(f"Error querying vulnerabilities: {e}")
-            return []
-
-    def check_for_updates(self, new_data_path):
+    def query_vulnerabilities(self, keyword, min_severity="LOW"):
         """
-        Check if new data needs to be added to the database.
-        :param new_data_path: Path to a new JSON file containing CVEs.
+        Queries the database for vulnerabilities matching a keyword and severity.
+        
+        Args:
+            keyword (str): A keyword (e.g., product name like 'apache' or 'openssh') to search for.
+            min_severity (str): The minimum severity to include (e.g., 'MEDIUM', 'HIGH').
+            
+        Returns:
+            list: A list of dictionaries, each representing a found vulnerability.
         """
-        try:
-            if not os.path.exists(new_data_path):
-                self.logger.error(f"New data file not found: {new_data_path}")
-                return
+        cursor = self.conn.cursor()
+        severity_map = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3, "UNKNOWN": 0}
+        min_severity_level = severity_map.get(min_severity.upper(), 0)
+        
+        results = []
+        # Query and filter severity in Python as severity levels are text in DB
+        cursor.execute("SELECT cve_id, description, severity, cvss_v3_score FROM vulnerabilities WHERE description LIKE ?", (f"%{keyword}%",))
+        
+        for row in cursor.fetchall():
+            cve_id, description, severity, score = row
+            current_severity_level = severity_map.get(severity.upper(), 0)
+            if current_severity_level >= min_severity_level:
+                results.append({
+                    "cve_id": cve_id,
+                    "description": description,
+                    "severity": severity,
+                    "cvss_v3_score": score
+                })
+                
+        return results
 
-            with open(new_data_path, "r") as file:
-                new_data = json.load(file)
-
-            with open(self.db_path, "r") as file:
-                current_data = json.load(file)
-
-            current_cve_ids = {cve.get("cve", {}).get("CVE_data_meta", {}).get("ID", "") for cve in current_data.get("CVE_Items", [])}
-            new_cves = [cve for cve in new_data.get("CVE_Items", []) if cve.get("cve", {}).get("CVE_data_meta", {}).get("ID", "") not in current_cve_ids]
-
-            if new_cves:
-                self.add_vulnerabilities(new_cves)
-                self.logger.info(f"Database updated with {len(new_cves)} new vulnerabilities.")
-            else:
-                self.logger.info("Database is already up-to-date.")
-        except Exception as e:
-            self.logger.error(f"Error checking for updates: {e}")
-
-    def update_seclists(local_path="data/wordlists/"):
-        """
-        Update SecLists to ensure the latest wordlists are available.
-        :param local_path: Local path to save the SecLists directory.
-        """
-        try:
-            import git
-            if os.path.exists(local_path):
-                repo = git.Repo(local_path)
-                repo.remote().pull()
-            else:
-                git.Repo.clone_from("https://github.com/danielmiessler/SecLists.git", local_path)
-            logger.info("SecLists updated successfully.")
-        except Exception as e:
-            logger.error(f"Failed to update SecLists: {e}")
-
-
-
-if __name__ == "__main__":
-    # Example usage
-    db_manager = DatabaseManager()
-
-    # Example: Add new vulnerabilities
-    new_vulnerabilities = [
-        {
-            "cve": {
-                "CVE_data_meta": {"ID": "CVE-2023-12345"},
-                "description": {
-                    "description_data": [{"value": "Example vulnerability in Apache HTTP Server."}]
-                },
-                "references": {"reference_data": [{"url": "https://example.com/cve-2023-12345"}]}
-            },
-            "impact": {
-                "baseMetricV3": {
-                    "cvssV3": {"baseSeverity": "HIGH"}
-                }
-            }
-        }
-    ]
-    db_manager.add_vulnerabilities(new_vulnerabilities)
-
-    # Example: Query vulnerabilities
-    results = db_manager.query_vulnerabilities("Apache", severity_threshold="HIGH")
-    for vuln in results:
-        print(f"CVE ID: {vuln['id']}")
-        print(f"Description: {vuln['description']}")
-        print(f"Severity: {vuln['severity']}")
-        print(f"References: {', '.join(vuln['references'])}\n")
-
-    # Example: Check for updates
-    db_manager.check_for_updates("data/new_cve_data.json")
+    def __del__(self):
+        """Ensure the database connection is closed when the object is destroyed."""
+        self.conn.close()

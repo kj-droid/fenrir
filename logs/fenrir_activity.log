@@ -1,0 +1,12 @@
+2025-07-24 13:59:29,272 - DatabaseManager - INFO - Starting CVE database update...
+2025-07-24 13:59:29,272 - DatabaseManager - INFO - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2021.json.zip
+2025-07-24 13:59:40,045 - DatabaseManager - INFO - Inserted/Updated 23075 records.
+2025-07-24 13:59:40,048 - DatabaseManager - INFO - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2022.json.zip
+2025-07-24 13:59:50,437 - DatabaseManager - INFO - Inserted/Updated 26708 records.
+2025-07-24 13:59:50,439 - DatabaseManager - INFO - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2023.json.zip
+2025-07-24 14:00:00,086 - DatabaseManager - INFO - Inserted/Updated 29780 records.
+2025-07-24 14:00:00,089 - DatabaseManager - INFO - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2024.json.zip
+2025-07-24 14:00:09,097 - DatabaseManager - INFO - Inserted/Updated 38470 records.
+2025-07-24 14:00:09,101 - DatabaseManager - INFO - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2025.json.zip
+2025-07-24 14:00:13,600 - DatabaseManager - INFO - Inserted/Updated 19909 records.
+2025-07-24 14:00:13,602 - DatabaseManager - INFO - CVE database update complete.
