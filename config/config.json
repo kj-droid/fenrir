@@ -1,0 +1,11 @@
+{
+    "api_keys": {
+        "alienvault": "YOUR_ALIENVAULT_API_KEY",
+        "virustotal": "YOUR_VIRUSTOTAL_API_KEY"
+    },
+    "default_scan_settings": {
+        "port_range": "1-1024",
+        "thread_count": 100,
+        "output_folder": "reports/output"
+    }
+}
