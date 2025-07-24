@@ -4,15 +4,8 @@
         "virustotal": "YOUR_VIRUSTOTAL_API_KEY"
     },
     "default_scan_settings": {
-        "port_range": "1-65535",
+        "port_range": "1-1024",
         "thread_count": 100,
         "output_folder": "reports/output"
-    },
-    "modules": {
-        "port_scanner": true,
-        "vulnerability_identifier": true,
-        "exploit_finder": true,
-        "web_scanner": true,
-        "threat_intelligence": true
     }
 }
