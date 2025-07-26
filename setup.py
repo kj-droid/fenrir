@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="fenrir",
     version="2.0.0",
-    author="Your Name",
+    author="KJ-Droid",
     description="Fenrir: Multi-Module Security Scanner",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
