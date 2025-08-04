@@ -1,0 +1,6 @@
+GitPython
+PyQt5
+fpdf
+netifaces
+python-nmap
+requests

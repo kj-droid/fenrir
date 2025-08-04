@@ -1,0 +1,8 @@
+core
+fenrir_cli
+fenrir_launcher
+gui
+modules
+update_db
+utils
+verify_db

@@ -1,0 +1,6 @@
+Host Discovery Log - 2025-08-04 13:57:33
+========================================
+IP Address: 192.168.56.105
+Status: UP
+OS Guess: Microsoft Windows 10 1709 - 21H2 (100%)
+

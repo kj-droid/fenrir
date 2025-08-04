@@ -1,0 +1,27 @@
+2025-08-01 11:27:36,941 - INFO - DatabaseManager - Starting CVE database update...
+2025-08-01 11:27:36,941 - INFO - DatabaseManager - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2021.json.zip
+2025-08-01 11:27:41,822 - INFO - DatabaseManager - Inserted/Updated 23075 records.
+2025-08-01 11:27:41,825 - INFO - DatabaseManager - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2022.json.zip
+2025-08-01 11:27:46,712 - INFO - DatabaseManager - Inserted/Updated 26711 records.
+2025-08-01 11:27:46,715 - INFO - DatabaseManager - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2023.json.zip
+2025-08-01 11:27:51,958 - INFO - DatabaseManager - Inserted/Updated 29791 records.
+2025-08-01 11:27:51,961 - INFO - DatabaseManager - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2024.json.zip
+2025-08-01 11:27:56,687 - INFO - DatabaseManager - Inserted/Updated 38500 records.
+2025-08-01 11:27:56,692 - INFO - DatabaseManager - Fetching data from https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2025.json.zip
+2025-08-01 11:28:00,046 - INFO - DatabaseManager - Inserted/Updated 20714 records.
+2025-08-01 11:28:00,049 - INFO - DatabaseManager - CVE database update complete.
+2025-08-04 13:55:32,717 - INFO - root - Launching Fenrir GUI...
+2025-08-04 13:57:33,180 - INFO - PortScanner - Discovering host: 192.168.56.105
+2025-08-04 13:57:35,978 - INFO - PortScanner - Discovery results for 192.168.56.105: {'status': 'up', 'os': 'Microsoft Windows 10 1709 - 21H2 (100%)', 'hostname': 'unknown-host'}
+2025-08-04 13:57:35,979 - INFO - PortScanner - Host 192.168.56.105 is up. Starting detailed port scan.
+2025-08-04 13:57:44,138 - INFO - VulnerabilityIdentifier - Searching for CVEs related to 'Microsoft Windows RPC'
+2025-08-04 13:57:44,216 - INFO - VulnerabilityIdentifier - Searching for CVEs related to 'microsoft-ds'
+2025-08-04 13:57:44,286 - INFO - VulnerabilityIdentifier - Searching for CVEs related to 'Microsoft Windows netbios-ssn'
+2025-08-04 13:57:44,355 - INFO - ExploitFinder - Running command: searchsploit --json Microsoft Windows RPC
+2025-08-04 13:57:44,922 - INFO - ExploitFinder - Running command: searchsploit --json Microsoft
+2025-08-04 13:57:45,593 - INFO - ExploitFinder - Running command: searchsploit --json Microsoft Windows netbios-ssn
+2025-08-04 14:02:32,254 - INFO - root - Launching Fenrir GUI...
+2025-08-04 14:07:42,641 - INFO - root - Launching Fenrir GUI...
+2025-08-04 14:10:52,952 - INFO - root - Launching Fenrir GUI...
+2025-08-04 14:13:29,579 - INFO - root - Launching Fenrir GUI...
+2025-08-04 14:13:40,353 - INFO - root - Launching Fenrir GUI...
